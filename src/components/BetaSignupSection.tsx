@@ -16,37 +16,44 @@ export default function BetaSignupSection() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus('idle');
+    setErrorMessage('');
 
     try {
-      const response = await fetch('https://formspree.io/f/xanyqbjr', {
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('userType', formData.userType);
+      formDataToSend.append('feedback', formData.feedback);
+      formDataToSend.append('_replyto', formData.email);
+      formDataToSend.append('_subject', `New Brainvx Beta Signup from ${formData.name}`);
+
+      const response = await fetch('https://formspree.io/f/mvzolzzg', {
         method: 'POST',
+        body: formDataToSend,
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          userType: formData.userType,
-          feedback: formData.feedback,
-          _replyto: formData.email,
-          _subject: `New Brainvx Beta Signup from ${formData.name}`
-        }),
+          'Accept': 'application/json'
+        }
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         setSubmitStatus('success');
         setFormData({ name: '', email: '', userType: '', feedback: '' });
       } else {
         setSubmitStatus('error');
+        setErrorMessage(data.error || 'Submission failed. Please try again.');
       }
     } catch (error) {
       console.error('Form submission error:', error);
       setSubmitStatus('error');
+      setErrorMessage('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -178,7 +185,7 @@ export default function BetaSignupSection() {
               {submitStatus === 'error' && (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <p className="text-red-400 text-center">
-                    ❌ Something went wrong. Please try again or email us directly at beta@brainvx.com
+                    ❌ {errorMessage || 'Something went wrong. Please try again or email us directly at beta@brainvx.com'}
                   </p>
                 </div>
               )}
